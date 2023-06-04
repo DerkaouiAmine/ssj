@@ -24,7 +24,18 @@
  */
 package umontreal.ssj.hups;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Scanner;
 
 import umontreal.ssj.rng.*;
 import umontreal.ssj.util.*;
@@ -52,7 +63,127 @@ public class DigitalNetBase2 extends DigitalNet {
 	protected int[] genMat;       // The current generator matrix.
 	protected transient int[] digitalShift;   // Stores the digital shift vector.
 	 //  **Pierre:** Check if @f$w@f$ is used sometimes in place of @f$r@f$, and clarify.
+	
+	private boolean fichierExiste = false;
+	
+	
+	
+	
+	public void writeGeneratorMatrixToFile(String filePath) {
+	    try {
+	        File file = new File(filePath);
+	     // Vérifier si le fichier existe déjà
+	        if (!fichierExiste) {
+	            // Effacer le fichier existant s'il y en a un
+	            if (file.exists()) {
+	                file.delete();
+	            }
+	            
+	            file.createNewFile();
+	            
+	            fichierExiste = true;
+	        }
+	        
+	        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file,true))) {
+	            int[][][] standardMatrices = new int[dim][numRows][numCols];
+	            for (int j = 0; j < dim; j++) {
+	                for (int r = 0; r < numRows; r++) {
+	                    for (int c = 0; c < numCols; c++) {
+	                        standardMatrices[j][r][c] = genMat[j * numCols + c];
+	                    }
+	                }
+	            }
+	            writer.write("************Matrix **********"+ System.lineSeparator());
+	            for (int j = 0; j < dim; j++) {
+	                writer.write("dim = " + (j + 1) + System.lineSeparator());
+	                for (int r = 0; r < 1; r++) {
+	                    StringBuilder sb = new StringBuilder();
+	                    for (int c = 0; c < numCols; c++) {
+	                        int digit = standardMatrices[j][r][c];
+	                        sb.append(digit).append(" ");
+	                    }
+	                    writer.write(sb.toString().trim() + System.lineSeparator());
+	                }
+	                writer.write("----------------------------------" + System.lineSeparator());
+	            }
+	            
+	            //System.out.println("La matrice génératrice a été écrite dans le fichier : " + filePath);
+	        }
+	    } catch (IOException e) {
+	        System.err.println("Erreur lors de l'écriture de la matrice génératrice dans le fichier : " + e.getMessage());
+	    }
+	}
+	
+	
+	
+  
 
+    public int[][] readGeneratorMatrixFromFile(String path) {
+        try {
+            File file = new File(path);
+            Scanner scanner = new Scanner(file);
+
+            List<List<Integer>> matrice = new ArrayList<>();
+
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                if (!line.startsWith("dim") && !line.startsWith("---") && !line.startsWith("**")) {
+                    List<Integer> row = new ArrayList<>();
+                    for (String number : line.split(" ")) {
+                        row.add(Integer.parseInt(number));
+                    }
+                    matrice.add(row);
+                }
+            }
+
+            // Créer une liste pour stocker les lignes non vides
+            List<List<Integer>> matriceNonVide = new ArrayList<>();
+
+            // Parcourir chaque ligne de la matrice
+            for (List<Integer> row : matrice) {
+                // Vérifier si la ligne n'est pas vide
+                if (!row.isEmpty()) {
+                    // Ajouter la ligne non vide à la liste
+                    matriceNonVide.add(row);
+                }
+            }
+
+            // Convertir la liste en un tableau à deux dimensions
+            int[][] mt = new int[matriceNonVide.size()][matriceNonVide.get(0).size()];
+            for (int i = 0; i < matriceNonVide.size(); i++) {
+                // Copier les valeurs dans chaque ligne du tableau
+                for (int j = 0; j < matriceNonVide.get(i).size(); j++) {
+                    mt[i][j] = matriceNonVide.get(i).get(j);
+                }
+            }
+
+            return mt;
+        } catch (FileNotFoundException e) {
+            System.err.println("Le fichier n'a pas été trouvé : " + e.getMessage());
+        }
+
+        return null; // En cas d'erreur, retourner null ou gérer l'erreur selon vos besoins
+    }
+
+
+    public int[][] getGeneratorMatrices(int k) {
+    	int[] GeneratorMatricesTrans= Arrays.copyOf(genMat, genMat.length);
+    	int [][]GeneratorMatrices=new int[dim][k];
+    	int l=0;
+    	for (int i=0;i<dim;i++)
+    	{l=0;
+    	for(int j=i*k;j<(i+1)*k;j++)
+    	{
+    		GeneratorMatrices[i][l]=GeneratorMatricesTrans[j];
+    		l+=1;
+    	}
+    		
+    	}
+		return GeneratorMatrices;
+	}
+    
+    
+    
 	/**
 	 * Returns the generator matrices in the natural format, which is 
 	 * a 3-dimensional array of shape dim x numRows x numCols.

@@ -309,6 +309,48 @@ public abstract class PointSet {
        return sb.toString();
    }
 
+   
+   public double [][] formatPointsTab() {
+	      PointSetIterator iter = iterator();
+	      return formatPointsTab (iter);
+	   }
+   
+   public double [][]  formatPointsTab (PointSetIterator iter) {
+	      int n = getNumPoints();
+	      if (n == Integer.MAX_VALUE)
+	         throw new UnsupportedOperationException (
+	            "Number of points is infinite");
+	      int d = getDimension();
+	      if (d == Integer.MAX_VALUE)
+	         throw new UnsupportedOperationException ("Dimension is infinite");
+	      return formatPointsTab (iter, n, d);
+	   }
+   
+   public double [][] formatPointsTab (PointSetIterator iter, int n, int d) {
+	   if (getNumPoints() < n)
+	        n = getNumPoints();
+	    if (getDimension() < d)
+	        d = getDimension();
+
+	    double[][] points = new double[n][d];
+
+	    for (int i = 0; i < n; i++) {
+	        for (int j = 0; j < d; j++) {
+	            points[i][j] = iter.nextCoordinate();
+	        }
+	        iter.resetToNextPoint();
+	    }
+
+	    return points;
+	   }
+	   
+   
+   
+   
+   
+   
+   
+   
    /**
     * Same as invoking  {@link #formatPoints(int,int) formatPoints(n, d)}
     * with @f$n@f$ and @f$d@f$ equal to the number of points and the
@@ -391,6 +433,8 @@ public abstract class PointSet {
       }
       return sb.toString();
    }
+   
+   
 
    /**
     * Similar to  {@link #formatPoints() formatPoints()}, but the points
