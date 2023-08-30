@@ -111,7 +111,7 @@ public abstract class PointSet {
    /** 
     * Dimension of the points.
     */
-   protected int dim = 0;                 
+   protected static int dim = 0;                 
 
    /** 
     * Number of points.
@@ -345,8 +345,7 @@ public abstract class PointSet {
 	   }
 	   
    
-   
-   
+	   
    
    
    

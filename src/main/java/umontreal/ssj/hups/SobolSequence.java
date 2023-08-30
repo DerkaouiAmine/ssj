@@ -122,6 +122,63 @@ public class SobolSequence extends DigitalSequenceBase2 {
     protected static final int MAXDEGREE = 18;  // Of primitive polynomial
 
     private String filename = null;
+    
+    
+    
+    
+    
+    
+    
+    
+    public SobolSequence (int k, int w, int dim,int []C) {
+        init1 (k, w, w, dim,C);
+     }
+
+     private void init1 (int k, int r, int w, int dim,int []C) {
+        if (filename == null)
+           if ((dim < 1) || (dim > MAXDIM))
+              throw new IllegalArgumentException 
+                 ("Dimension for SobolSequence must be > 0 and <= " + MAXDIM);
+        else
+           if (dim < 1)
+              throw new IllegalArgumentException 
+                 ("Dimension for SobolSequence must be > 0");
+
+        if (r < k || w < r || w > MAXBITS || k >= MAXBITS) 
+           throw new IllegalArgumentException
+              ("One must have k < 31 and k <= r <= w <= 31 for SobolSequence");
+        numCols   = k;
+        numRows   = r;   // Used in DigitalNetBase2, to read and print matrices and for interlacing.
+        outDigits = w;
+        numPoints = (1 << k);
+        this.dim  = dim;
+        normFactor = 1.0 / ((double) (1L << (outDigits)));
+        genMat = new int[dim * numCols];
+        genMat=C;
+        
+     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
    /**
     * Constructs a new digital net with @f$n = 2^k@f$ points and @f$w@f$
