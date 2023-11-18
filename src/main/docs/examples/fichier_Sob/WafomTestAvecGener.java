@@ -48,7 +48,7 @@ Sob.leftMatrixScramble(new MRG32k3a());
         }
     
         Wafom lowWaf=new Wafom (Sob,1,dim,w,k);
-	       double currentWafom =lowWaf.calcWafom1(tab);
+	       double currentWafom =lowWaf.calcWafom1(tab,k);
 	       System.out.println(currentWafom);
 	       
 	       double waf=lowWaf.calcWafom();
