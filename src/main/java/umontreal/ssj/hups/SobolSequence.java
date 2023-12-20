@@ -126,9 +126,30 @@ public class SobolSequence extends DigitalSequenceBase2 {
     
     
     
+    //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%DERKAOUI ADD%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+    /**
+     * Constructs a new digital net with @f$n = 2^k@f$ points and @f$w@f$
+     * output digits, in dimension `dim`, formed by taking the first
+     * @f$n@f$ points of the Sobol’ sequence. We will give the generator
+     * matrices @f$\mathbf{C}@f$ are @f$k\times dim@f$, as a vector ordered by blocks of k components for each dimension.
+     * Restrictions: @f$0\le k\le30@f$, @f$k\le w@f$, and `dim` @f$ \le360@f$.
+     * To use other direction numbers or to create points in **higher
+     * dimensions**, one should use #SobolSequence(String,int,int,int)
+     * instead of this constructor.
+     *
+     * @param k     There will be 2^k points.
+     * @param r     Number of rows of the generator matrices.
+     * @param w     Number of output digits after a random digital shift.
+     * @param dim   Dimension of the point set.
+     * @param C     The generating matrix that gives us the point set.
+     */
     
-    
-    
+    /**
+     * This method is essential for recreating a Sobol point set from the optimized generator matrices.
+     */
+
     
     public SobolSequence (int k, int w, int dim,int []C) {
         init1 (k, w, w, dim,C);
@@ -163,7 +184,8 @@ public class SobolSequence extends DigitalSequenceBase2 {
     
     
     
-    
+     //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
     
     
     

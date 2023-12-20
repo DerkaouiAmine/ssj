@@ -60,7 +60,7 @@ public class OldAsianGBM implements MonteCarloModelDouble {
 	}
 
 	public static void main(String[] args) {
-		int d = 12;
+		int d = 3;
 		double[] obsTimes = new double[d + 1];
 		obsTimes[0] = 0.0;
 		for (int j = 1; j <= d; j++)

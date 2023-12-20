@@ -69,120 +69,12 @@ public class DigitalNetBase2 extends DigitalNet {
 	
 	
 	
-	
-	public int[][] getScramblMatrices() {
-		int [][] a=Arrays.copyOf(scrambleMat, scrambleMat.length);
-		  int rows = a.length;
-		    int cols = a[0].length;
+	  //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%DERKAOUI ADD%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	/**
+	 * Returns the generator matrices in decimal format, represented as a 2-dimensional array of shape dim x k.
+	 * This format uses an int for each column of w bits, resulting in a more memory-efficient and faster method.
+	 */
 
-		    int[][] transposedMatrix = new int[cols][rows];
-
-		    for (int i = 0; i < rows; i++) {
-		        for (int j = 0; j < cols; j++) {
-		            transposedMatrix[j][i] = a[i][j];
-		        }
-		    }
-
-		    return transposedMatrix;
-	}
-	
-	public void writeGeneratorMatrixToFile(String filePath) {
-	    try {
-	        File file = new File(filePath);
-	     // Vérifier si le fichier existe déjà
-	        if (!fichierExiste) {
-	            // Effacer le fichier existant s'il y en a un
-	            if (file.exists()) {
-	                file.delete();
-	            }
-	            
-	            file.createNewFile();
-	            
-	            fichierExiste = true;
-	        }
-	        
-	        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file,true))) {
-	            int[][][] standardMatrices = new int[dim][numRows][numCols];
-	            for (int j = 0; j < dim; j++) {
-	                for (int r = 0; r < numRows; r++) {
-	                    for (int c = 0; c < numCols; c++) {
-	                        standardMatrices[j][r][c] = genMat[j * numCols + c];
-	                    }
-	                }
-	            }
-	            writer.write("************Matrix **********"+ System.lineSeparator());
-	            for (int j = 0; j < dim; j++) {
-	                writer.write("dim = " + (j + 1) + System.lineSeparator());
-	                for (int r = 0; r < 1; r++) {
-	                    StringBuilder sb = new StringBuilder();
-	                    for (int c = 0; c < numCols; c++) {
-	                        int digit = standardMatrices[j][r][c];
-	                        sb.append(digit).append(" ");
-	                    }
-	                    writer.write(sb.toString().trim() + System.lineSeparator());
-	                }
-	                writer.write("----------------------------------" + System.lineSeparator());
-	            }
-	            
-	            //System.out.println("La matrice génératrice a été écrite dans le fichier : " + filePath);
-	        }
-	    } catch (IOException e) {
-	        System.err.println("Erreur lors de l'écriture de la matrice génératrice dans le fichier : " + e.getMessage());
-	    }
-	}
-	
-	
-	
-  
-
-    public int[][] readGeneratorMatrixFromFile(String path) {
-        try {
-            File file = new File(path);
-            Scanner scanner = new Scanner(file);
-
-            List<List<Integer>> matrice = new ArrayList<>();
-
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine();
-                if (!line.startsWith("dim") && !line.startsWith("---") && !line.startsWith("**")) {
-                    List<Integer> row = new ArrayList<>();
-                    for (String number : line.split(" ")) {
-                        row.add(Integer.parseInt(number));
-                    }
-                    matrice.add(row);
-                }
-            }
-
-            // Créer une liste pour stocker les lignes non vides
-            List<List<Integer>> matriceNonVide = new ArrayList<>();
-
-            // Parcourir chaque ligne de la matrice
-            for (List<Integer> row : matrice) {
-                // Vérifier si la ligne n'est pas vide
-                if (!row.isEmpty()) {
-                    // Ajouter la ligne non vide à la liste
-                    matriceNonVide.add(row);
-                }
-            }
-
-            // Convertir la liste en un tableau à deux dimensions
-            int[][] mt = new int[matriceNonVide.size()][matriceNonVide.get(0).size()];
-            for (int i = 0; i < matriceNonVide.size(); i++) {
-                // Copier les valeurs dans chaque ligne du tableau
-                for (int j = 0; j < matriceNonVide.get(i).size(); j++) {
-                    mt[i][j] = matriceNonVide.get(i).get(j);
-                }
-            }
-
-            return mt;
-        } catch (FileNotFoundException e) {
-            System.err.println("Le fichier n'a pas été trouvé : " + e.getMessage());
-        }
-
-        return null; // En cas d'erreur, retourner null ou gérer l'erreur selon vos besoins
-    }
-
-//rend une matrice dim*k
     public int[][] getGeneratorMatrices(int k) {
     	int[] GeneratorMatricesTrans= Arrays.copyOf(genMat, genMat.length);
     	int [][]GeneratorMatrices=new int[dim][k];
@@ -200,225 +92,24 @@ public class DigitalNetBase2 extends DigitalNet {
 	}
     
     
-    
-    public double [][] getSobolPointSet(int k,int w){
-    	int n=(1<<k);
-    	int [][]tab=getGeneratorMatrices(k);
-    	double[][] a=new double[dim][(1<<k)+1];
-    	for (int j=0;j<dim;j++) {
-    for (int i=0;i<n+1;i++) {
-    	
-    	a[j][i]=calculateU1(j,i,  k, tab, w);
-    }
-    	}
-    	
-        // Création de la sous-matrice en excluant la première colonne
-        double[][] subset = new double[dim][n];
-        for (int j = 0; j < dim; j++) {
-            subset[j] = Arrays.copyOfRange(a[j], 1, n + 1);
-        }
-        
-		return  transposeMatrix(subset);
-    	
-    }
-    
-    public double[][] transposeMatrix(double[][] matrix) {
-        int rows = matrix.length;
-        int cols = matrix[0].length;
-        double[][] transposed = new double[cols][rows];
+	  //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%FINISH%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                transposed[j][i] = matrix[i][j];
-            }
-        }
 
-        return transposed;}
     
-    
-    public double [][] getSobolPointSetForGeneratMatrix(int k,int w,int [][]tab){
-    	int n=(1<<k);
-    	
-    	double[][] a=new double[dim][(1<<k)+1];
-    	for (int j=0;j<dim;j++) {
-    for (int i=0;i<n+1;i++) {
-    	
-    	a[j][i]=calculateU1(j,i,  k, tab, w);
-    }
-    	}
-    	
-        // Création de la sous-matrice en excluant la première colonne
-        double[][] subset = new double[dim][n];
-        for (int j = 0; j < dim; j++) {
-            subset[j] = Arrays.copyOfRange(a[j], 1, n + 1);
-        }
-	 return  transposeMatrix(subset);
-    	
-    	
-    }
-    
-	 double calculateU1(int j,int n, int k, int[][] C, int r) {
-		// int n=(1 << k);
-		int s=dim;
-		 double U = 0;
-    double normFactor = 1.0 / (1 << r);
    
-	   
-    for (int i = 0; i < n; i++) {
-        int coord = 0; // Initialize coord as an integer
-        for (int c = 0; c < k; c++) {
-           // System.out.println(c +" CCC");
-
-            coord ^= ((i >> c) & 1) * C[j][c]; // Convert C[j][c] to integer
-           //System.out.println(coord +" COOOR");
-          
-          // System.out.println(U[j][i]+" UUUUU");
-        }
-        
-        U = coord * normFactor;
-    }
-   
-
-    return U;
-}
+    
+    
+	
 	 
 	 
-	 
-	 
-	 public double[][] getSobolPointSetForGeneratMatrix1(int k, int w, int[][] tab) {
-		    int n = (1 << k);
-		    double[][] a = new double[dim][n + 1];
-
-		    double normFactor = 1.0 / (1 << w); // Calculate normFactor once
-
-		  /*  // Precompute binary representations of i
-		    int[][] binaryReps = new int[n][k];
-		    IntStream.range(0, n ).parallel().forEach(i -> {
-
-		   
-		        for (int c = 0; c < k; c++) {
-		            binaryReps[i][c] = (i >> c) & 1;
-		        }
-		    });*/
-		    // Precompute binary representations of i
-		    int[][] binaryReps = new int[n][k];
-		    for (int i = 0; i < n; i++) {
-		        for (int c = 0; c < k; c++) {
-		            binaryReps[i][c] = (i >> c) & 1;
-		        }
-		    }
-
-		  // Parallelize the outer loop to speed up computation
-		    IntStream.range(0, n + 1).parallel().forEach(i -> {
-		        for (int j = 0; j <  dim; j++) {
-		            a[j][i] = calculateU11(j, i, k, tab, binaryReps, normFactor);
-		        }
-		    });
-		
-		    // Création de la sous-matrice en excluant la première colonne
-		    double[][] subset = new double[dim][n];
-		    for (int j = 0; j < dim; j++) {
-		        subset[j] = Arrays.copyOfRange(a[j], 1, n + 1);
-		    }
-
-		    return transposeMatrix(subset);
-		}
-
-
-	 double calculateU11(int j, int n, int k, int[][] C, int[][] binaryReps, double normFactor) {
-		    int s = dim;
-		    double U = 0;
-
-		    for (int i = 0; i < n; i++) {
-		        int coord = 0;
-		        for (int c = 0; c < k; c++) {
-		            coord ^= binaryReps[i][c] * C[j][c];
-		        }
-
-		        U = coord * normFactor;
-		    }
-
-		    return U;
-		}
-		
-		
-		
-		
-		
-		
-		
-		public double [][] getSobolPointSetForGeneratMatrix2(int k,int w,int [][]tab){
-	    	int n=(1<<k);
-	    	int n1=(1<<(k-1)); 
-	    	
-	    	double[][] a=new double[dim][(1<<k)+1];
-	    	for (int j=0;j<dim;j++) {
-	    for (int i=n1;i<n+1;i++) {
-	    	
-	    	a[j][i]=calculateU12(j,i,  k, tab, w);
-	    }
-	    	}
-	    	
-	        // Création de la sous-matrice en excluant la première colonne
-	        double[][] subset = new double[dim][n];
-	        for (int j = 0; j < dim; j++) {
-	            subset[j] = Arrays.copyOfRange(a[j], 1, n + 1);
-	        }
-		 return  transposeMatrix(subset);
-	    	
-	    	
-	    }
-	    
-		 double calculateU12(int j,int n, int k, int[][] C, int r) {
-			// int n=(1 << k);
-			int s=dim;
-			 double U = 0;
-	    double normFactor = 1.0 / (1 << r);
-	   
-		   
-	    for (int i = 0; i < n; i++) {
-	        int coord = 0; // Initialize coord as an integer
-	        for (int c = 0; c < k; c++) {
-	           // System.out.println(c +" CCC");
-
-	            coord ^= ((i >> c) & 1) * C[j][c]; // Convert C[j][c] to integer
-	           //System.out.println(coord +" COOOR");
-	          
-	          // System.out.println(U[j][i]+" UUUUU");
-	        }
-	        
-	        U = coord * normFactor;
-	    }
-	   
-
-	    return U;
-	}
-	 
+	
 		 
 		 
 		 
 		 
 		 
-		 
-		 //i need that to have a regular matrice for wafom i have to add a warning for dim<k
 		 
 	
-			public int[][][] generatorMatricesToStandardFormat1(int c){
-				int r, j;	// Row r, column c, dimension j.
-				r=c;
-				int[][][] standardMatrices = new int[dim][numCols][numCols];
-				for (j = 0; j < numCols; j++) {
-					for (c = 0; c < numCols; c++) {
-						int column = genMat[j * numCols + c];  // This column as an integer.
-						column >>= outDigits - numRows;		   // outDigits (or w) is used here.
-						for (r = numRows - 1; r >= 0; r--) {
-							standardMatrices[j][r][c] = (column & 1);
-							column >>= 1;
-						}
-					}
-				}
-				return standardMatrices;
-			} 
 		 
 		 
 		 

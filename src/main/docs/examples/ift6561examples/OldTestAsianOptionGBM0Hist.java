@@ -13,7 +13,7 @@ public class OldTestAsianOptionGBM0Hist {
 
 	// For testing with a GBM process, MC only.
 	public static void main(String[] args) throws IOException {
-		int numObsTimes = 12;
+		int numObsTimes = 16;
 		double T1 = 1.0 / 12.0;
 		double T = 1.0;
 		double strike = 100.0;

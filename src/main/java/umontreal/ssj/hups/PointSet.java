@@ -310,10 +310,41 @@ public abstract class PointSet {
    }
 
    
+   
+   //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%DERKAOUI ADD%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   
+   /**
+    * Generates a 2-dimensional table representation of all the points in the point set.
+    * Equivalent to calling {@link #formatPoints(int, int) formatPoints(n, d)}
+    * with @f$n@f$ and @f$d@f$ equal to the number of points and the
+    * dimension of this object, respectively.
+    *
+    * @return double[][] Two-dimensional array representing the points in the point set.
+    *                   Each column corresponds to the s-th dimensional representation of a point,
+    *                   and each row represents one of the 2^k points.
+    * @throws UnsupportedOperationException if the number of points or
+    *                                       dimension of the point set is infinite.
+    */
+
    public double [][] formatPointsTab() {
 	      PointSetIterator iter = iterator();
 	      return formatPointsTab (iter);
 	   }
+   
+   /**
+    * Same as invoking {@link #formatPointsTab(PointSetIterator) formatPointsTab(iter)},
+    * but returns a 2-dimensional array representation instead of a string.
+    * If the number of points in the point set is infinite, it throws an UnsupportedOperationException.
+    * If the dimension of the point set is infinite, it throws an UnsupportedOperationException.
+    *
+    * @param iter iterator associated with the point set
+    * @return double[][] Two-dimensional array representing the points in the point set.
+    *                   Each row corresponds to a point, and each column corresponds to a coordinate.
+    * @throws UnsupportedOperationException if the number of points or
+    *                                      dimension of the point set is infinite
+    */
+   
+
    
    public double [][]  formatPointsTab (PointSetIterator iter) {
 	      int n = getNumPoints();
@@ -325,6 +356,22 @@ public abstract class PointSet {
 	         throw new UnsupportedOperationException ("Dimension is infinite");
 	      return formatPointsTab (iter, n, d);
 	   }
+   
+   
+   
+   /**
+    * Same as invoking {@link #formatPointsTab(PointSetIterator) formatPointsTab(iter)},
+    * but returns a 2-dimensional array representation instead of a string.
+    * If the number of points in the point set is infinite, it throws an UnsupportedOperationException.
+    * If the dimension of the point set is infinite, it throws an UnsupportedOperationException.
+    *
+    * @param iter iterator associated with the point set
+    * @return double[][] Two-dimensional array representing the points in the point set.
+    *                   Each row corresponds to a point, and each column corresponds to a coordinate.
+    * @throws UnsupportedOperationException if the number of points or
+    *                                      dimension of the point set is infinite
+    */
+   
    
    public double [][] formatPointsTab (PointSetIterator iter, int n, int d) {
 	   if (getNumPoints() < n)
@@ -347,7 +394,8 @@ public abstract class PointSet {
    
 	   
    
-   
+
+   //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%FINISH ADD%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    
    
    /**
