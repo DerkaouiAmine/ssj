@@ -65,31 +65,81 @@ public class DigitalNetBase2 extends DigitalNet {
 	protected transient int[] digitalShift;   // Stores the digital shift vector.
 	 //  **Pierre:** Check if @f$w@f$ is used sometimes in place of @f$r@f$, and clarify.
 	private int[][] scrambleMat;
-	private boolean fichierExiste = false;
+	
+	/**
+	 * Maximal dimension for the primitive polynomials stored in this file.
+	 */
+    protected static final int MAXDIM    = 360;
+
+	/**
+	 * Maximal degree of the primitive polynomials that are stored.
+	 */
+    protected static final int MAXDEGREE = 18;  // Of primitive polynomial
+
+    private String filename = null;
+	
+	int result=0;
+	
+
+	
 	
 	
 	
 	  //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%DERKAOUI ADD%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	/**
-	 * Returns the generator matrices in decimal format, represented as a 2-dimensional array of shape dim x k.
-	 * This format uses an int for each column of w bits, resulting in a more memory-efficient and faster method.
-	 */
+ /**
+     * Constructs a new digital net with @f$n = 2^k@f$ points and @f$w@f$
+     * output digits, in dimension `dim`. We will give the generator
+     * matrices @f$\mathbf{C}@f$ are @f$k\times dim@f$, as a vector ordered by blocks of k components for each dimension.
+     * Restrictions: @f$0\le k\le30@f$, @f$k\le w@f$, and `dim` @f$ \le360@f$.can be changed (i took standard values from Sobol)
+  
+     *
+     * @param k     There will be 2^k points.
+     * @param w     Number of output digits after a random digital shift.
+     * @param dim   Dimension of the point set.
+     * @param C     The generating matrix that gives us the point set.
+     */
+    
+    /**
+     * This method is essential for recreating a Digital net from the optimized generator matrices.
+     */
+	
 
-    public int[][] getGeneratorMatrices(int k) {
-    	int[] GeneratorMatricesTrans= Arrays.copyOf(genMat, genMat.length);
-    	int [][]GeneratorMatrices=new int[dim][k];
-    	int l=0;
-    	for (int i=0;i<dim;i++)
-    	{l=0;
-    	for(int j=i*k;j<(i+1)*k;j++)
-    	{
-    		GeneratorMatrices[i][l]=GeneratorMatricesTrans[j];
-    		l+=1;
-    	}
-    		
-    	}
-		return GeneratorMatrices;
-	}
+    public DigitalNetBase2 () {
+    	/**
+    	 * Default constructor for the DigitalNetBase2 class.
+    	 * 
+    	 * This empty constructor is essential to avoid interference with the creation 
+    	 * of digital nets using existing methods in the SSJ library.
+    	 */
+    }
+    public DigitalNetBase2 (int k, int w, int dim,int []C) {
+    	init1 (k, w, w, dim,C);
+    }
+
+    private void init1 (int k, int r, int w, int dim,int []C) {
+    	if (filename == null)
+    		if ((dim < 1) || (dim > MAXDIM))
+    			throw new IllegalArgumentException 
+    			("Dimension for DigitalNetBase2 must be > 0 and <= " + MAXDIM);
+    		else
+    			if (dim < 1)
+    				throw new IllegalArgumentException 
+    				("Dimension for DigitalNetBase2 must be > 0");
+
+    	if (r < k || w < r || w > MAXBITS || k >= MAXBITS) 
+    		throw new IllegalArgumentException
+    		("One must have k < 31 and k <= r <= w <= 31 for DigitalNetBase2");
+    	numCols   = k;
+    	numRows   = r;   // Used in DigitalNetBase2, to read and print matrices and for interlacing.
+    	outDigits = w;
+    	numPoints = (1 << k);
+    	this.dim  = dim;
+    	normFactor = 1.0 / ((double) (1L << (outDigits)));
+    	genMat = new int[dim * numCols];
+    	genMat=C;
+
+    }
+    
     
     
 	  //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%FINISH%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -390,7 +440,7 @@ public class DigitalNetBase2 extends DigitalNet {
 			originalMat = genMat;
 			genMat = new int[dim * numCols];
 		}
-		// Constructs the lower-triangular scrambling matrices M_j, w by w.
+		// Constructs the lower-triangular scrambling matrices M_j=L_j, w by w.
 		// scrambleMat[j][l] contains row l in a single integer (binary repres.)
 		scrambleMat = new int[dim][outDigits];
 		for (j = 0; j < dim; j++) {
@@ -403,6 +453,161 @@ public class DigitalNetBase2 extends DigitalNet {
 		for (j = 0; j < dim; j++)
 			leftMultiplyMat(j, scrambleMat[j]);
 	}
+	
+	
+	  //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%DERKAOUI ADD%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	/**
+	 * Similar to the method 'leftMatrixScramble(RandomStream stream)'.
+	 * 
+	 * This constructor is utilized when extracting the Lower matrix, denoted as 'L'. 
+	 * For instance, when constructing the optimal matrix, obtaining the coordinates of 'L' is essential.
+	 */
+
+
+	public int [][] leftMatrixScrambleGetMatrixL (RandomStream stream) {
+		int j, d;  // dimension j, subdiagonal d.
+		final int allOnes = (1 << outDigits) - 1;    // outDigits ones.
+		// If genMat contains the original gen. matrices, copy to originalMat.
+		if (originalMat == null) {
+			originalMat = genMat;
+			genMat = new int[dim * numCols];
+		}
+		// Constructs the lower-triangular scrambling matrices M_j=L_j, w by w.
+		// scrambleMat[j][l] contains row l in a single integer (binary repres.)
+		scrambleMat = new int[dim][outDigits];
+		for (j = 0; j < dim; j++) {
+			scrambleMat[j][0] = allOnes;
+			for (d = 1; d < outDigits; d++)
+				scrambleMat[j][d] = (stream.nextInt(0, allOnes >> d)) << d;
+		}
+		// Multiply M_j by the generator matrix C_j for each j.
+		for (j = 0; j < dim; j++)
+			leftMultiplyMat(j, scrambleMat[j]);
+
+		return scrambleMat;
+	}
+
+	
+	
+	
+	
+	
+	
+	
+	/**
+	 * Constructs an extended left matrix for an optimal matrix construction.
+	 * 
+	 * This method is crucial when aiming to build an optimal matrix by fixing the number of columns in 'L'. 
+	 * The matrix 'L' is constructed column by column. In this context, our 'scrambleMat' is equivalent to 'optim' 
+	 * for every column j where j <= r.
+	 * 
+	 * 
+	 * @param stream    Random stream for generating values.
+	 * @param optim     The original matrix to be extended.
+	 * @param r         Number of columns to be constructed (here juste the last column will be modified but can be extended to more than one column).
+	 * @return          The extended left matrix.
+	 */
+	public int[][] leftMatrixScrambleExtend(RandomStream stream, int[][] optim, int r) {
+
+		final int allOnes = (1 << outDigits) - 1;
+		// If 'originalMat' is not initialized, set it to 'genMat' and reset 'genMat'.
+		if (originalMat == null) {
+			originalMat = genMat;
+			genMat = new int[dim * numCols];
+		}
+		// Initialize 'scrambleMat' with the first r-1 columns from 'optim'.
+		int[][] scrambleMat = new int[dim][outDigits];
+		for (int i = 0; i < dim; i++) {
+			//scrambleMat[i][0] = allOnes;
+			for (int j = 0; j < r; j++) {
+				scrambleMat[i][j] = optim[i][j];
+			}
+		}
+		// Generate the r^th column of 'scrambleMat'.
+		for (int j = 0; j < dim; j++) {
+			for (int d = r; d < outDigits; d++) {
+				scrambleMat[j][d] = (stream.nextInt(0, allOnes >> d)) << d;
+			}
+			scrambleMat[j][0] = allOnes;//ici pour que sa soit vraie pour r=0 sion r>=1
+		}
+		// Multiply 'scrambleMat' by the generator matrix for each j.
+		for (int j = 0; j < dim; j++) {
+			leftMultiplyMat(j, scrambleMat[j]);
+		}
+		return scrambleMat;
+	}
+
+	/**
+	 * Method similar to 'leftMatrixScramble', 'leftMatrixScrambleExtend' and 'leftMultiplyMat', 
+	 * but utilizing the definitions provided in the article:
+	 * @cite {
+	 *   Sebastien M. R. Arnold, Pierre L’Ecuyer, Liyu Chen, Yi-fan Chen, and Fei Sha.
+	 *   "Policy learning and evaluation with randomized quasi-monte carlo", 2022.
+	 */
+
+
+	public int[][] leftMatrixScrambleBis(RandomStream stream) {
+		int j, d,l,col;  
+		final int allOnes = (1 << outDigits) ;    
+		if (originalMat == null) {
+			originalMat = genMat;
+			genMat = new int[dim * numCols];
+		}
+		scrambleMat = new int[dim][outDigits];
+		for (j = 0; j < dim; j++) {
+			for (d = 0; d < outDigits; d++) {
+				scrambleMat[j][d] = (allOnes+stream.nextInt(0, allOnes )) >> d;
+			}
+		}
+		for(j=0;j<dim;j++) {
+			leftMultiplyMatBis( j, scrambleMat[j]);
+		}
+		return	scrambleMat;
+	}
+
+	//similar to leftMultiplyMat 
+	private void leftMultiplyMatBis(int j, int[] Mj) {
+		int c, d, col;      
+		for (c = 0; c < numCols; c++) {
+			col = 0;
+			for (d = 0; d < outDigits; d++)
+				col ^= (( originalMat[j * numCols + c]>>(outDigits-d))& 1) *Mj[d];
+			genMat[j * numCols + c] = col;
+		}
+	}
+
+
+
+	public int[][] leftMatrixScrambleExtendBis(RandomStream stream, int[][] optim, int r) {
+		final int allOnes = (1 << outDigits) ;
+		if (originalMat == null) {
+			originalMat = genMat;
+			genMat = new int[dim * numCols];
+		}
+		int[][] scrambleMat = new int[dim][outDigits];
+		for (int i = 0; i < dim; i++) {
+			for (int j = 0; j < r; j++) {
+				scrambleMat[i][j] = optim[i][j];
+			}
+		}
+		for (int j = 0; j < dim; j++) {
+			for (int d = r; d < outDigits; d++) {
+				scrambleMat[j][d] = (allOnes+stream.nextInt(0, allOnes )) >> d;
+			}
+		}
+		for (int j = 0; j < dim; j++) {
+			leftMultiplyMatBis(j, scrambleMat[j]);
+		}
+
+		return scrambleMat;
+	}
+
+
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	
+	
+	
 
 	public void iBinomialMatrixScramble(RandomStream stream) {
 		int j, d;     // Dimension j, subdiagonal d of M_j.
@@ -756,6 +961,8 @@ public class DigitalNetBase2 extends DigitalNet {
 	}
 
 	
+	
+	
 	// *******************************************************************
 	protected class DigitalNetBase2Iterator extends DigitalNetIterator {
 
@@ -773,6 +980,7 @@ public class DigitalNetBase2 extends DigitalNet {
 			EpsilonHalf = 0.5 / Num.TWOEXP[outDigits];
 			cachedCurPoint = new int[dim + 1];
 			dimS = dim;
+			
 			init2();
 		}
 
@@ -789,6 +997,7 @@ public class DigitalNetBase2 extends DigitalNet {
 		}
 
 		public double nextCoordinate() {
+			result=cachedCurPoint[curCoordIndex] ;
 			if (curPointIndex >= numPoints || curCoordIndex >= dimS)
 				outOfBounds();
 			if (digitalShift == null)
@@ -862,7 +1071,29 @@ public class DigitalNetBase2 extends DigitalNet {
 			}
 			return resetToNextPoint();
 		}
+		
+		//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% DERKAOUI ADD %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+		/**
+		 * Returns the coordinates of the *current* point in base 2. This method utilizes with two iterators:
+		 * one for `nextCoordinate()` and another for `getCachedCurPoint()`. The rationale behind this approach
+		 * is to achieve faster performance compared to directly using `nextPoint()`, which returns vectors as integers
+		 * for multiple coordinates of a single dimension. The `result` variable is derived from `nextCoordinate()`
+		 * and corresponds to `cachedCurPoint[curCoordIndex]`.
+		 * A natural extension is created in `PointSetIterator`.
+		 */
+		public int[] getCachedCurPoint() {
+			for (int r = outDigits - 1; r >= 0; r--) {
+				cachedCurPoint [r] = (result & 1);
+				result >>= 1;
+			}
+			return cachedCurPoint ;
+		}
 	}
+
+
+
+	  //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	
 	// *******************************************************************
@@ -873,6 +1104,7 @@ public class DigitalNetBase2 extends DigitalNet {
 
 		public DigitalNetBase2IteratorNoGray() {
 			super();
+			cachedCurPoint = new int[outDigits];
 		}
 
 		public void setCurPointIndex(int i) {
@@ -911,6 +1143,9 @@ public class DigitalNetBase2 extends DigitalNet {
 			curCoordIndex = 0;
 			return ++curPointIndex;
 		}
+	
+		
+	
 
 	}
 }

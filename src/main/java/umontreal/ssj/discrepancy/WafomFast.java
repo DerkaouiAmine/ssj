@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.util.Arrays;
 
 import umontreal.ssj.hups.DigitalNetBase2;
+import umontreal.ssj.hups.PointSetIterator;
 import umontreal.ssj.hups.SobolSequence;
 import umontreal.ssj.rng.MRG32k3a;
 
@@ -37,11 +38,18 @@ import umontreal.ssj.rng.MRG32k3a;
  */
 
 
-public class WafomAcceler {
+public class WafomFast {
 	private static DigitalNetBase2 dn;
-	private static int dim;//dimension s
-	private static int w;
 	private  static int q;
+	/**
+	 * Parameter 'c' determines the definition of WAFOM:
+	 * - Set 'c' to 0 for the original WAFOM definition.
+	 * - Set 'c' to 1 for Yoshiki's definition.
+	 * - For other contexts or definitions, adjust 'c' accordingly.
+	 */
+	private static int weight=0;
+	private static int w;
+
 
 	/**
 	 * Constructor for a Digital Net Base 2. The parameter 'c' is provided according to the desired method,
@@ -57,16 +65,11 @@ public class WafomAcceler {
 	 * 
 	 */
 
-	public WafomAcceler (DigitalNetBase2 dn, double c, int dim,int w,int k,int q) {
+	public WafomFast (DigitalNetBase2 dn,int w,int q) {
 		this.dn=dn;
-		this.dim=dim;
 		this.w=w;
 		this.q=q;
-
-
-
-	}
-
+}
 
 	/**
 	 * Here, we compute -1^x_ij from the WAFOM formula, or simply use the equivalent expression 1 - 2 * x_ij for a faster computation.
@@ -76,196 +79,94 @@ public class WafomAcceler {
 	}
 
 
-
-
-
 	/**
 	 * Here, for each point in the 's' dimensions, we precalculate its table_c[d_c^i].
 	 */
 
-	private static double[] calctabl(int[] point) {
+	private static double[] calctabl(int[] point,int w,int s) {
 
 		/**
 		 * Generates an error because we need to divide 'w' into 'q' equal parts, and therefore, the division must result in an integer.
 		 */
 		if (w % q != 0)   {throw new ArithmeticException("The division of w by q is not an integer.");}
-
-
 		/**
 		 * If q=0, an error is returned.
 		 */
 		if (q == 0)  { System.err.println("Warning: q is equal to zero, division by zero may occur.");}
 
 		int l=w/q;
-
-		double[]tabledci=new double [q*dim];
-
+		double[]tabledci=new double [q*s];
 		double prod=1;
 		int startIndex=0;
 		int index1=0;
-
-		for (int i = 0; i < dim; i++) {
-			//double w1 = point[i];
+		for (int i = 0; i < s; i++) {
 			int index=startIndex*w;
-
 			for (int c = 1; c <=q; c++) {
 				prod = 1.0;
-
 				for (int j = 1; j <= l; j++)
 				{
-
 					int bij=point[(c-1)*l+(j-1)+index];
-					double exponent = -((c-1)*l+(j-1)+1);
+					int exponent = -((c-1)*l+(j-1)+1+weight);
 					double result = 1.0 / (1L << (int)(-exponent));
 					/*
 					 * we do not use result Math.pow(2.0, -((c-1)*l+(j-1)+1)) for a faster computation
 					 * */
 					prod*=1.0 + m1p(bij) *result;
-
-
 				}
-
 				tabledci[index1]=prod;
 				index1++;
-
 			} 
 			startIndex++;
-
 		}
-
-
 		return tabledci;
-
 	}
-
-
-
 
 	/**
 	 * This method calculates the part \prod_{1<=c<=q} table_c[d_c^i] of the formula.
 	 */
-	private static double calcWafomSub(double [] dci) {
+	private static double calcWafomSub(double [] dci,int s) {
 		double prod = 1.0;
-		int startIndex=0;
 		int indexxx=0;
-
-		for (int i = 0; i < dim; i++) {
+		for (int i = 0; i < s; i++) {
 			for (int c = 1; c <=q ; c++) {
-				//prod*=dci[(c-1)+index];
-
 				double p =dci[indexxx];
-
 				prod*=p;
 				indexxx++;
 			}
-
-			startIndex++;
 		}
-
 		return prod - 1.0;
 	}
-
-
-
 
 	/**
 	 * In this method, we apply the previous method calcWafomSub for each point among the N = 2^k points.
 	 * Simply sum the results and divide by |P| to obtain the WAFOM for our point set.
 	 */
 
-
-
 	public static double calcWafom(){
-
-
-
-
-
 		double sum = 0.0;
-
-		double[][] tab= dn.formatPointsTab();
-
-		int [][]pointSet=convertDecimalToBinary(tab,w);
-		long num = pointSet.length;
-		for (long i = 0; i < num; i++) {
-			int[] point = pointSet[(int) i];
-			double []tabledc=calctabl( point);
-
-			double sub = calcWafomSub(tabledc);
+		long num = dn.getNumPoints();
+		int s=dn.getDimension();
+		int [] bPoint1= new int[s*w];
+		int expon=1<<(w+1);
+		int shift=1/expon;
+		PointSetIterator iterator = dn.iteratorNoGray();
+		PointSetIterator iter=dn.iteratorNoGray();
+		for(int i1=0;i1<num;i1++) {
+			int index=0;
+			while(iter.hasNextCoordinate()) {
+				double coorddi=iter.nextCoordinate();
+				int[] currentPoint = iterator.getCachedCurPoint();//+shift
+				for(int j=0;j<currentPoint.length;j++) {
+					bPoint1[j+index]=currentPoint[j]+shift;
+				}
+				index+=w;
+			}	
+			double []tabledc=calctabl( bPoint1,w,s);
+			double sub = calcWafomSub(tabledc,s);
 			sum += sub;
+			iter.resetToNextPoint();
 		}
-
 		return sum/ num;
 	}
-
-
-	/**
-	 * Here is the same definition of WAFOM, but taking an array instead of a digital net.
-	 * I chose not to use this as a constructor for a more general usage.
-	 */
-
-	public static double calcWafom1(double[][] array,int k1) {
-		double sum = 0.0;
-		int num1=(1<<k1);
-		int[][] pointSet = convertDecimalToBinary(array, w);
-		long num = pointSet.length;
-		for (long i = 0; i < num; i++) {
-
-			int[] point = pointSet[(int) i];
-			double []tabledc=calctabl( point);
-
-			double sub = calcWafomSub(tabledc);
-			sum += sub;
-
-		}
-		return sum / num1;
-	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	/**
-	 * This method converts our decimal point set into a binary point set for later use in the WAFOM calculation.
-	 * It takes the parameter 'decimalNumbers,' which represents our point set with 'N = 2^k' rows and 's' columns in decimal.
-	 * It transforms it into base 2 with a conversion precision of 'decimalPlaces.'
-	 */
-
-	public static int[][] convertDecimalToBinary(double[][] decimalNumbers, int decimalPlaces) {
-		int[][] binaryArray = new int[decimalNumbers.length][decimalNumbers[0].length * decimalPlaces];
-
-		for (int i = 0; i < decimalNumbers.length; i++) {
-			for (int j = 0; j < decimalNumbers[i].length; j++) {
-				double decimalNumber = decimalNumbers[i][j];
-				int[] binaryRow = new int[decimalPlaces];
-
-				for (int k = 0; k < decimalPlaces; k++) {
-					decimalNumber *= 2;
-					binaryRow[k] = (int) decimalNumber;
-					decimalNumber -= binaryRow[k];
-				}
-
-				System.arraycopy(binaryRow, 0, binaryArray[i], j * decimalPlaces, decimalPlaces);
-			}
-		}
-
-		return binaryArray;
-	}
-
-
 
 }

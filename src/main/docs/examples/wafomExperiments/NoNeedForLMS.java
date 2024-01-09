@@ -1,4 +1,4 @@
-package WafomExperiments;
+package wafomExperiments;
 
 
 import java.util.Arrays;

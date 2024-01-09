@@ -3,6 +3,7 @@ package umontreal.ssj.discrepancy;
 import java.io.FileNotFoundException;
 
 import umontreal.ssj.hups.DigitalNetBase2;
+import umontreal.ssj.hups.PointSetIterator;
 import umontreal.ssj.hups.PointSetRandomization;
 import umontreal.ssj.hups.RQMCPointSet;
 import umontreal.ssj.hups.RandomShift;
@@ -46,7 +47,7 @@ public class WafomRQMC {
 	 */
 	private static final double factor = 2.0;
 	private static DigitalNetBase2 dn;
-	private static double c=1;//by default and 2 if we want the Yoshiki definition
+	private static final double c=1;//by default and 0 if we want the Yoshiki definition
 	private static int s;
 	private static int w;
 	private static int k;
@@ -64,10 +65,17 @@ public class WafomRQMC {
 	 * @param rand is essential to establish a digital shift	
 	 * 
 	 */
+	/**
+	 * This construction is intentionally kept for testing purposes. 
+	 * It specifically caters to cases where the number of points is less than or equal to 'k' 
+	 * and when construction is done dimension by dimension.
+	 * 
+	 * The standard 'WafomRQMCWafomRQMC (DigitalNetBase2 dn,  RandomShift rand) as the original Wafom constructor, 
+	 * can be replaced here or another constructor can be used depending on the context.
+	 */
 
-	public WafomRQMC (DigitalNetBase2 dn, double c, int s,int w,int k,  RandomShift rand) {
+	public WafomRQMC (DigitalNetBase2 dn, int k,int w,int s,  RandomShift rand) {
 		this.dn=dn;
-		this.c=c;
 		this.s=s;
 		this.w=w;
 		this.k=k;
@@ -85,50 +93,57 @@ public class WafomRQMC {
 	 * This method calculates the part \(\prod_{i=1}^{s} \prod_{j=1}^{w} \left([1 + (-1)^{(-1)^{x_{i,j}}}2^{-2*(j)}] - 1\right)\) of the formula.
 	 */
 	private static double calcWafomSub(int[] point) {
-		int N=w;
+
 
 		double prod = 1.0;
 		int startIndex=0;
 
 		for (int i = 0; i < s; i++) {
-
 			int index=startIndex*w;
 			for (int j = 0; j < w; j++) {
-
 				int bij=point[j+index];
-
-				double p = 1.0 + m1p(bij) * Math.pow(2.0, -factor*(j+2-c));
+				int exponent = (int) (factor * (j + 2 - c));
+				double result = 1.0 / (1L << exponent);
+				double p = 1.0 + m1p(bij) * result;
 				prod *= p;
 			}
 			startIndex++;
 		}
 
-		return prod ;
+		return (prod );
 	}
-
-
-
 	/**
 	 * In this method, we apply the previous method calcWafomSub for each point among the N = 2^k points.
 	 * Simply sum the results and divide by |P| to obtain the WAFOM for our point set.
 	 */
 	public static double calcWafom(){
-		double sum = 0.0;
 
 		rand.randomize(dn);
+		double sum = 0.0;
+		long num = 1<<k;
+		double[] point=new double[s];
+		int [] bPoint= new int[s*w];
+		int i=0;
+		int expon=1<<(w+1);
+		double shift=1/expon;
 
-		// dn.addRandomShift();
-
-		double[][] tab= dn.formatPointsTab();
-
-		int [][]pointSet=convertDecimalToBinary(tab,w);
-		long num = pointSet.length;
-		for (long i = 0; i < num; i++) {
-			int[] point = pointSet[(int) i];
-
-			double sub = calcWafomSub(point);
-
+		PointSetIterator iter=dn.iteratorNoGray();
+		PointSetIterator iterator = dn.iteratorNoGray();
+		while(iter.hasNextPoint()) {
+			i=0;
+			int index=0;
+			while(iter.hasNextCoordinate()) {
+				double coorddi=iter.nextCoordinate();
+				int[] currentPoint = iterator.getCachedCurPoint();//+shift
+				for(int j=0;j<currentPoint.length;j++) {
+					bPoint[j+index]=(int) (currentPoint[j]+shift);
+				}
+				index+=w;
+			}	
+			double sub = calcWafomSub(bPoint);
 			sum += sub;
+			iter.resetToNextPoint();
+
 		}
 
 		return Math.sqrt(-1+(sum/num));
@@ -136,31 +151,7 @@ public class WafomRQMC {
 
 
 
-	/**
-	 * This method converts our decimal point set into a binary point set for later use in the WAFOM calculation.
-	 * It takes the parameter 'decimalNumbers,' which represents our point set with 'N = 2^k' rows and 's' columns in decimal.
-	 * It transforms it into base 2 with a conversion precision of 'decimalPlaces.'
-	 */
-	public static int[][] convertDecimalToBinary(double[][] decimalNumbers, int decimalPlaces) {
-		int[][] binaryArray = new int[decimalNumbers.length][decimalNumbers[0].length * decimalPlaces];
 
-		for (int i = 0; i < decimalNumbers.length; i++) {
-			for (int j = 0; j < decimalNumbers[i].length; j++) {
-				double decimalNumber = decimalNumbers[i][j];
-				int[] binaryRow = new int[decimalPlaces];
-
-				for (int k = 0; k < decimalPlaces; k++) {
-					decimalNumber *= 2;
-					binaryRow[k] = (int) decimalNumber;
-					decimalNumber -= binaryRow[k];
-				}
-
-				System.arraycopy(binaryRow, 0, binaryArray[i], j * decimalPlaces, decimalPlaces);
-			}
-		}
-
-		return binaryArray;
-	}
 
 
 

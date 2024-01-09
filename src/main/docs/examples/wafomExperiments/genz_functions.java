@@ -1,4 +1,4 @@
-package WafomExperiments;
+package wafomExperiments;
 
 /**
  * In this class, we define our test functions as the functions of Genz, as defined in:

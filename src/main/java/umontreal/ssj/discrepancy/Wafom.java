@@ -1,6 +1,7 @@
 package umontreal.ssj.discrepancy;
 
 import umontreal.ssj.hups.DigitalNetBase2;
+import umontreal.ssj.hups.PointSetIterator;
 
 /**
  * This class computes the Walsh Figure of Merit (WAFOM) for a Digital Net Base 2.
@@ -43,32 +44,33 @@ public class Wafom {
 	 * The 'factor' here is defined as 1 for the Original definition of the WAFOM. For the definition provided by Goda, we need to set 'factor' to 2
 	 * and take the square root of the final result.
 	 */
-	private static final double factor = 1.0;//=2 dans un article pour WAFOm equivalent RQMC
+	private static final double factor = 1.0;//  this is set to 2 for Wafom RQMC .
+
 	private static DigitalNetBase2 dn;
 
+
 	/**
-	 * For the original definition of WAFOM, set c=1. For Yoshiki's definition, use c=2.
+	 * Parameter 'c' determines the definition of WAFOM:
+	 * - Set 'c' to 1 for the original WAFOM definition.
+	 * - Set 'c' to 0 for Yoshiki's definition.
+	 * - For other contexts or definitions, adjust 'c' accordingly.
 	 */
-	private static double c=1;
-	private static int s;//dimension
-	private static int w;//precision
+
+	private static  final double c=1;
+
+
+
+	
 	/**
 	 * Constructor for a Digital Net Base 2. The parameter 'c' is provided according to the desired method,
 	 * 's' represents the dimension, 'w' is the precision, and 'N = 2^k' is the number of points.
 	 *
 	 * @param digitalNet The Digital Net Base 2.
-	 * @param c The parameter 'c' according to the chosen method.
-	 * @param s The dimension.
-	 * @param w The precision.
-	 * @param k The exponent determining the number of points (N = 2^k).
-	 */
-	public Wafom (DigitalNetBase2 dn, double c, int s,int w,int k) {
+*/
+	public Wafom (DigitalNetBase2 dn) {
 		this.dn=dn;
-		this.c=c;
-		this.s=s;
-		this.w=w;
-
-	}
+}
+	
 
 	/**
 	 * Here, we compute -1^x_ij from the WAFOM formula, or simply use the equivalent expression 1 - 2 * x_ij for a faster computation.
@@ -82,31 +84,23 @@ public class Wafom {
 	/**
 	 * This method calculates the part \(\prod_{i=1}^{s} \prod_{j=1}^{w} \left([1 + (-1)^{(-1)^{x_{i,j}}}2^{-(j)}] - 1\right)\) of the formula.
 	 */
-	private static double calcWafomSub(int[] point) {
+	private static double calcWafomSub(int[] point,int w,int s) {
 
 
 		double prod = 1.0;
 		int startIndex=0;
-
 		for (int i = 0; i < s; i++) {
 			int index=startIndex*w;
 			for (int j = 0; j < w; j++) {
-				//int bij = (int) (((long)w >> (N - j - 1)) & 1);
 				int bij=point[j+index];
-				//System.out.println("Index:"+(j+index)+":BIJ:"+bij);
-
-				double exponent = -factor * (j + 2 - c);
-				double result = 1.0 / (1L << (int)(-exponent));
-				//double p = 1.0 + m1p(bij) * Math.pow(2.0, -factor * (j + 2 - c));
-
+				int exponent = (int) (factor * (j + 2 - c));
+				double result = 1.0 / (1L << exponent);
 				double p = 1.0 + m1p(bij) * result;
-
 				prod *= p;
 			}
 			startIndex++;
 		}
-
-		return prod - 1.0;
+		return (prod );
 	}
 
 
@@ -114,75 +108,37 @@ public class Wafom {
 	 * In this method, we apply the previous method calcWafomSub for each point among the N = 2^k points.
 	 * Simply sum the results and divide by |P| to obtain the WAFOM for our point set.
 	 */
+	/*
+	 * @param s The dimension.
+	 * @param w The precision.
+	 * @param k The exponent determining the number of points (num = 2^k).
+	 */
 
 	public static double calcWafom(){
 		double sum = 0.0;
-
-
-		double[][] tab= dn.formatPointsTab();
-
-		int [][]pointSet=convertDecimalToBinary(tab,w);
-		long num = pointSet.length;
-		for (long i = 0; i < num; i++) {
-			int[] point = pointSet[(int) i];
-
-			double sub = calcWafomSub(point);
-			sum += sub;
-		}
-
-		return sum/ num;
-	}
-
-
-
-
-
-	/**
-	 * Here is the same definition of WAFOM, but taking an array instead of a digital net.
-	 * I chose not to use this as a constructor for a more general usage.
-	 */
-
-	public static double calcWafom1(double[][] array,int k1) {
-		double sum = 0.0;
-		int num1=(1<<k1);
-		int[][] pointSet = convertDecimalToBinary(array, w);
-		long num = pointSet.length;
-		for (long i = 0; i < num; i++) {
-			int[] point = pointSet[(int) i];
-			double sub = calcWafomSub(point);
-			sum += sub;
-		}
-		return sum / num1;
-	}
-
-	/**
-	 * This method converts our decimal point set into a binary point set for later use in the WAFOM calculation.
-	 * It takes the parameter 'decimalNumbers,' which represents our point set with 'N = 2^k' rows and 's' columns in decimal.
-	 * It transforms it into base 2 with a conversion precision of 'decimalPlaces.'
-	 */
-
-
-	public static int[][] convertDecimalToBinary(double[][] decimalNumbers, int decimalPlaces) {
-		int[][] binaryArray = new int[decimalNumbers.length][decimalNumbers[0].length * decimalPlaces];
-
-		for (int i = 0; i < decimalNumbers.length; i++) {
-			for (int j = 0; j < decimalNumbers[i].length; j++) {
-				double decimalNumber = decimalNumbers[i][j];
-				int[] binaryRow = new int[decimalPlaces];
-
-				for (int k = 0; k < decimalPlaces; k++) {
-					decimalNumber *= 2;
-					binaryRow[k] = (int) decimalNumber;
-					decimalNumber -= binaryRow[k];
+		long num = dn.getNumPoints();
+		int w=dn.getMaxBits();
+		int s=dn.getDimension();
+		int [] bPoint= new int[s*w];
+		int i=0;
+		PointSetIterator iter=dn.iteratorNoGray();
+		PointSetIterator iterator = dn.iteratorNoGray();
+		while(iter.hasNextPoint()) {
+			i=0;
+			int index=0;
+			while(iter.hasNextCoordinate()) {
+				double coorddi=iter.nextCoordinate();
+				int[] currentPoint = iterator.getCachedCurPoint();//+shift
+				for(int j=0;j<currentPoint.length;j++) {
+					bPoint[j+index]=(int) (currentPoint[j]);
 				}
-
-				System.arraycopy(binaryRow, 0, binaryArray[i], j * decimalPlaces, decimalPlaces);
-			}
+				index+=w;
+			}	
+			double sub = calcWafomSub(bPoint,w,s);
+			sum += sub;
+			iter.resetToNextPoint();
 		}
-
-		return binaryArray;
+		return (-1+(sum/ num));
 	}
-
-
 
 }

@@ -193,4 +193,10 @@ public interface PointSetIterator extends RandomStream {
 	 */
 	public int nextPoint(double[] p, int d);
 
+	/**
+	 * return getCachedCurPoint() .
+	 */
+	
+	public int[] getCachedCurPoint();
+
 }

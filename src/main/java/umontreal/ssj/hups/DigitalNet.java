@@ -1148,6 +1148,13 @@ public class DigitalNet extends PointSet {
 			}
 			return curPointIndex;
 		}
+		
+		public int[] getCachedCurPoint() {
+			//reste a voir comment remplir cela
+			System.out.println("AAAAAAAAAAAAAAAA");
+		    return cachedCurPoint;
+		}
+		
 	}
 
 }

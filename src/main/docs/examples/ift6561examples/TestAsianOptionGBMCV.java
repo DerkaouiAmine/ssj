@@ -20,8 +20,8 @@ public class TestAsianOptionGBMCV {
 	// and gives a 95% confidence interval.
 	public static void main(String[] args) throws IOException {
 		int numObsTimes = 12;
-		double T1 = 1.0 / 12.0;
-		double T = 1.0;
+		double T1 = 60.0/ 365.0;
+		double T = 72.0/365.0;
 		double strike = 100.0;
 		double s0 = 100.0;
 		double r = 0.05;
@@ -49,14 +49,14 @@ public class TestAsianOptionGBMCV {
 		System.out.printf("Proportion of zero payoffs: %12.6f%n", fractionZero);
 
 		// Make a histogram of positive discounted payoffs.
-		HistogramChart hist = new HistogramChart(
+		/*HistogramChart hist = new HistogramChart(
 				"Distribution of positive discounted payoff", "Payoff",
-				"Frequency", statValuePosMC.getArray(), statValuePosMC.numberObs());
+				"Frequency", statValuePosMC.getArray(), statValuePosMC.numberObs());*/
 		double[] bounds = { 0, 150, 0, 35000 };  // Range for x and y.
-		hist.setManualRange(bounds);
+		/*hist.setManualRange(bounds);
 		(hist.getSeriesCollection()).setBins(0, 60, 0, 150); // 60 bins over [0, 150].
 		hist.view(800, 500);
-		hist.toLatexFile ("asianHist.tex", 10.0, 8.0);  // Stand-alone Latex file.
+		hist.toLatexFile ("asianHist.tex", 10.0, 8.0);  // Stand-alone Latex file.*/
 
 		// double[] mean = new double[2];
 		// double[] variance = new double[2];
